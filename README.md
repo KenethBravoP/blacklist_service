@@ -47,7 +47,93 @@ export AUTH_TOKEN=devops-static-token
 python application.py
 ```
 
-## Pruebas
+# 🚀 Pruebas con cURL - Blacklist Service
+
+Base URL:
+```
+
+[http://127.0.0.1:5000](http://127.0.0.1:5000)
+
+```
+
+Token de autorización:
+```
+
+Bearer devops-static-token
+
+```
+
+---
+
+## ✅ 1. Health Check
+
+```bash
+curl http://127.0.0.1:5000/health
+```
+
+---
+
+## ✅ 2. Agregar email a blacklist (POST /blacklists)
+
+```bash
+curl -X POST http://127.0.0.1:5000/blacklists \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer devops-static-token" \
+  -d '{
+    "email": "test@example.com",
+    "app_uuid": "123e4567-e89b-12d3-a456-426614174000",
+    "blocked_reason": "spam"
+  }'
+```
+
+---
+
+## ✅ 3. Consultar email en blacklist (GET /blacklists/{email})
+
+```bash
+curl -X GET http://127.0.0.1:5000/blacklists/test@example.com \
+  -H "Authorization: Bearer devops-static-token"
+```
+
+---
+
+## ❌ 4. Prueba sin token (debe fallar)
+
+```bash
+curl -X GET http://127.0.0.1:5000/blacklists/test@example.com
+```
+
+---
+
+## ❌ 5. UUID inválido (validación)
+
+```bash
+curl -X POST http://127.0.0.1:5000/blacklists \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer devops-static-token" \
+  -d '{
+    "email": "bad@example.com",
+    "app_uuid": "uuid-invalido",
+    "blocked_reason": "spam"
+  }'
+```
+
+---
+
+## 🧪 6. Email inválido
+
+```bash
+curl -X POST http://127.0.0.1:5000/blacklists \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer devops-static-token" \
+  -d '{
+    "email": "no-es-email",
+    "app_uuid": "123e4567-e89b-12d3-a456-426614174000",
+    "blocked_reason": "spam"
+  }'
+```
+
+## Pruebas unitarias
 
 ```bash
 pytest -q
