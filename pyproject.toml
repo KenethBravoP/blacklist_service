@@ -1,0 +1,26 @@
+[tool.poetry]
+name = "blacklist-service-app"
+version = "0.1.0"
+package-mode = false
+description = "blacklist microservice"
+authors = ["Equipo 12"]
+
+[tool.poetry.dependencies]
+python = ">=3.10,<4.0"
+flask = "3.0.3"
+flask-sqlalchemy = "3.1.1"
+flask-restful = "0.3.10"
+flask-marshmallow = "1.2.1"
+flask-jwt-extended = "4.6.0"
+marshmallow = "^3.0"
+sqlalchemy = "^2.0"
+psycopg2-binary = "^2.9"
+gunicorn = "^21.0"
+python-dotenv = "^1.0"
+
+[tool.poetry.group.dev.dependencies]
+pytest = "^8.0"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"

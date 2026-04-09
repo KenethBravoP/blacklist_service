@@ -40,11 +40,9 @@ En produccion configure el token en la variable de entorno `AUTH_TOKEN`.
 ## Ejecucion local
 
 ```bash
-python -m venv .venv
-source .venv/bin/activate  # En Windows use .venv\Scripts\activate
-pip install -r requirements.txt
-export AUTH_TOKEN=devops-static-token
-python application.py
+poetry install
+export AUTH_TOKEN=devops-static-token  # En Windows PowerShell use: $env:AUTH_TOKEN="devops-static-token"
+poetry run python application.py
 ```
 
 # 🚀 Pruebas con cURL - Blacklist Service
