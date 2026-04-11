@@ -137,6 +137,109 @@ curl -X POST http://127.0.0.1:5000/blacklists \
 pytest -q
 ```
 
+## Despliegue Automatizado con Terraform (AWS)
+
+La infraestructura y la aplicación pueden desplegarse con los scripts de Terraform que se encuentran en el directorio `terraform/`. 
+Estos scripts aprovisionan un bucket en S3 para la carga del código (app.zip), una base de datos PostgreSQL en Amazon RDS, la VPC requerida y un entorno en AWS Elastic Beanstalk.
+
+### Prerrequisitos
+- Tener las credenciales de Amazon Web Services (AWS) configuradas localmente. (~/.aws/credentials)
+- Instalar Terraform en el sistema.
+
+### Pasos para Desplegar
+1. Inicializar el entorno de Terraform:
+```bash
+cd terraform
+terraform init
+```
+2. Ejecutar el plan y aplicar los recursos. Se solicitarán el nombre de usuario y contraseña para la base de datos de Postgres.
+```bash
+terraform apply
+```
+
+### Configuración de la Estrategia de Despliegue (Deployment Policies)
+
+Para configurar Terraform para aprovisionar las siguientes arquitecturas se debe modificar el archivo `terraform/beanstalk.tf`. 
+Se deben agregar los siguientes bloques dentro del recurso `aws_elastic_beanstalk_environment`:
+
+#### 1. Estrategia Inmutable (Immutable)
+Beanstalk lanza una nueva instancia en otro Auto Scaling Group. Si pasa los *health checks*, balancea el tráfico hacia ella y destruye las antiguas. Funciona con esquemas `SingleInstance` o `LoadBalanced`:
+```hcl
+  setting {
+    namespace = "aws:elasticbeanstalk:command"
+    name      = "DeploymentPolicy"
+    value     = "Immutable"
+  }
+```
+
+#### 2. Estrategia Rolling (Por Lotes)
+Actualiza iterativamente los servidores sin dejar al sistema por fuera de servicio. **Requiere contar mínimo con un entorno de LoadBalancer y más de 1 instancia.**
+```hcl
+  setting {
+    namespace = "aws:elasticbeanstalk:environment"
+    name      = "EnvironmentType"
+    value     = "LoadBalanced"
+  }
+  
+  setting {
+    namespace = "aws:autoscaling:asg"
+    name      = "MinSize"
+    value     = "2"
+  }
+  
+  setting {
+    namespace = "aws:autoscaling:asg"
+    name      = "MaxSize"
+    value     = "4"
+  }
+
+  setting {
+    namespace = "aws:elasticbeanstalk:command"
+    name      = "DeploymentPolicy"
+    value     = "Rolling" # O puede ser "RollingWithAdditionalBatch"
+  }
+  
+  setting {
+    namespace = "aws:elasticbeanstalk:command"
+    name      = "BatchSizeType"
+    value     = "Fixed"
+  }
+  
+  setting {
+    namespace = "aws:elasticbeanstalk:command"
+    name      = "BatchSize"
+    value     = "1"
+  }
+```
+
+#### 3. Estrategia Traffic Splitting (Canary / División de tráfico)
+Despliega las nuevas versiones en un batch separado, pero redirige un % controlado del tráfico para detectar posibles anomalías antes del reemplazo general de versión. **Requiere ALB (Application Load Balancer) y LoadBalanced Environment**:
+```hcl
+  setting {
+    namespace = "aws:elasticbeanstalk:environment"
+    name      = "EnvironmentType"
+    value     = "LoadBalanced"
+  }
+
+  setting {
+    namespace = "aws:elasticbeanstalk:command"
+    name      = "DeploymentPolicy"
+    value     = "TrafficSplitting"
+  }
+
+  setting {
+    namespace = "aws:elasticbeanstalk:trafficsplitting"
+    name      = "NewVersionPercent"
+    value     = "15" # Redirige el 15% del tráfico a la nueva versión
+  }
+
+  setting {
+    namespace = "aws:elasticbeanstalk:trafficsplitting"
+    name      = "EvaluationTime"
+    value     = "5" # Evalúa errores en minutos
+  }
+```
+
 ## Despliegue manual en Elastic Beanstalk
 
 1. Cree la base de datos PostgreSQL en RDS y permita el acceso desde el security group del ambiente Beanstalk.
