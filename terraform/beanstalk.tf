@@ -65,7 +65,7 @@ data "archive_file" "app_zip" {
 }
 
 resource "aws_s3_bucket" "eb_app_bucket" {
-  bucket        = "${var.app_name}-${var.environment}-eb-deploy"
+  bucket_prefix = "${var.app_name}-${var.environment}-eb-deploy-"
   force_destroy = true
 }
 
@@ -135,13 +135,13 @@ resource "aws_elastic_beanstalk_environment" "env" {
   setting {
     namespace = "aws:autoscaling:asg"
     name      = "MinSize"
-    value     = "2"
+    value     = "3"
   }
 
   setting {
     namespace = "aws:autoscaling:asg"
     name      = "MaxSize"
-    value     = "4"
+    value     = "6"
   }
 
   setting {

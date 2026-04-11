@@ -25,7 +25,7 @@ variable "db_username" {
 variable "db_password" {
   description = "PostgreSQL DB password"
   type        = string
-  default = "sappy-refinance-slit-elevator-skimmer-prowling"
+  sensitive   = true
 }
 
 variable "db_name" {
