@@ -26,23 +26,78 @@ A continuación se presentan las capturas de pantalla del proceso de creación d
 ![Despliegue de base de datos con terraform](images/all-at-once/db-despliegue-terraform.png)
 ![Base de datos en ejecución](images/all-at-once/db-en-ejecucion.png) 
 
+El siguiente es el contenido del archivo de configuración de rds en el que se especifica el uso de Postgres15
+
+```hcl
+resource "aws_db_parameter_group" "postgres_params" {
+  name        = "${var.app_name}-${var.environment}-pg-params"
+  family      = "postgres15"
+  description = "RDS parameter group for ${var.app_name}"
+}
+
+resource "aws_db_subnet_group" "default" {
+  name       = "${var.app_name}-${var.environment}-sbg"
+  subnet_ids = [aws_subnet.public_1.id, aws_subnet.public_2.id]
+
+  tags = {
+    Name        = "${var.app_name}-${var.environment}-subnet-group"
+    Environment = var.environment
+  }
+}
+
+resource "aws_db_instance" "postgres" {
+  identifier             = "${var.app_name}-${var.environment}-db"
+  instance_class         = var.db_instance_class
+  allocated_storage      = var.db_allocated_storage
+  engine                 = "postgres"
+  engine_version         = "15" # Utilizing major version 15 defaults
+  username               = var.db_username
+  password               = var.db_password
+  db_name                = var.db_name
+  db_subnet_group_name   = aws_db_subnet_group.default.name
+  vpc_security_group_ids = [aws_security_group.rds_sg.id]
+  parameter_group_name   = aws_db_parameter_group.postgres_params.name
+  publicly_accessible    = false
+  skip_final_snapshot    = true # Should be false in production
+
+  tags = {
+    Name        = "${var.app_name}-${var.environment}-db"
+    Environment = var.environment
+  }
+}
+```
+
 ### 3.2 Configuracion del proyecto en AWS Elastic Beanstalk
 Inserte capturas de:
-- creacion de la aplicacion
-- roles
-- variables de entorno
-- carga del ZIP
-- URL final
+#### Creacion de la aplicacion
+
+![Despliegue de una nueva versión con terraform](images/all-at-once/app-despliegue-terraform.png)
+
+#### Roles
+
+Para el correcto funcionamiento de la aplicación se implementaron los siguientes roles de IAM mediante Terraform:
+
+**Service Role (`beanstalk_service_role`):** Requerido para la operación de Elastic Beanstalk que permite ver y actualizar los recursos del entorno. **Políticas:** `AWSElasticBeanstalkEnhancedHealth` y `AWSElasticBeanstalkService`.
+
+**EC2 Instance Profile (`beanstalk_ec2_role`):** Rol para las instancias de EC2 que les permite ejecutar la aplicación e conectarse al entorno de AWS. **Políticas:** `AWSElasticBeanstalkWebTier` otorga permisos para descargar el archivo .zip con el código desde S3 y escribir logs en CloudWatch.
+
+#### Carga del ZIP
+
+![Actualización cargando el .zip directamente](images/all-at-once/app-despliegue-cargando-zip.png)
+
+#### URL final
+
+La URL del entorno de Elastic Beanstalk con la aplicación en operación es el siguiente: [http://blacklist-service-dev-env.eba-nm7uwni6.us-east-1.elasticbeanstalk.com](http://blacklist-service-dev-env.eba-nm7uwni6.us-east-1.elasticbeanstalk.com)
 
 ### 3.3 Configuracion de health checks
-Inserte capturas del path `/health` y evidencia de estado verde/ok.
+
+La configuración de las verificaciones de salud se realizó mediante el archivo .ebextensions/01_healthcheck.config, en el cual se especifica que debe usar el endpoint /health de la aplicación. La siguiente es una captura de /health en funcionamiento.
+
+![Health check exitoso](images/health-ok.png)
 
 ## 4. Pruebas en Postman
-- URL del workspace o documentacion publicada
-- Capturas del POST exitoso
-- Capturas del GET existente
-- Capturas del GET inexistente
-- Capturas de errores de autenticacion o validacion
+
+La dirección de la documentación de Postman publicada es [https://documenter.getpostman.com/view/5048503/2sBXitDT2f](https://documenter.getpostman.com/view/5048503/2sBXitDT2f)
 
 ## 5. Estrategias de despliegue
 
@@ -93,9 +148,7 @@ Pese a someter la aplicación a una carga de más de 200 peticiones por segundo,
 
 #### Capturas
 
-![Despliegue de una nueva versión con terraform](images/all-at-once/app-despliegue-terraform.png)
 ![Tiempo de despliegue inicial](images/all-at-once/app-tiempo-despliegue.png)
-![Actualización cargando el .zip directamente](images/all-at-once/app-despliegue-cargando-zip.png)
 ![Actualización de contenedores](images/all-at-once/app-actualizacion-contenedores.png)
 ![Carga de solicitudes](images/all-at-once/app-carga-solicitudes.png)
 ![Estado ok de contenedores](images/all-at-once/app-estado-ok-contenedores.png)
