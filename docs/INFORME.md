@@ -68,7 +68,6 @@ resource "aws_db_instance" "postgres" {
 ```
 
 ### 3.2 Configuracion del proyecto en AWS Elastic Beanstalk
-Inserte capturas de:
 #### Creacion de la aplicacion
 
 ![Despliegue de una nueva versión con terraform](images/all-at-once/app-despliegue-terraform.png)
@@ -225,13 +224,59 @@ Durante la ejecución de la estrategia Rolling se identificaron los siguientes h
 
 ---
 
-### 5.3 Rolling with additional batch
-- Cantidad de instancias
-- Como se valido el despliegue
-- Tiempo total
-- Instancias iniciales o nuevas
-- Hallazgos
-- Capturas
+### 5.3 Rolling with Additional Batch
+
+Esta estrategia realiza el despliegue por lotes, agregando instancias adicionales temporales para mantener la capacidad durante la actualización.
+
+#### Cantidad de instancias
+
+El entorno fue configurado con un mínimo de 3 instancias EC2.  
+Durante el despliegue se agregó 1 instancia adicional temporal (batch size = 1).
+
+![Configuración del entorno Rolling with Additional Batch](images/roll-wit-add-batch/rolling-add-batch-2.png)
+
+#### Cómo se validó el despliegue
+
+El despliegue se validó mediante:
+
+- Eventos de AWS Elastic Beanstalk (estado *Succeeded*)
+- Ejecución de pruebas en Postman
+- Verificación del endpoint `/health`
+
+![Eventos del despliegue en AWS](images/roll-wit-add-batch/eventes-roll-add-batch.png)
+
+![Resultados de pruebas en Postman](images/roll-wit-add-batch/test-postman-roll-batch.png)
+
+![Health check exitoso](images/roll-wit-add-batch/healt-roll-add-batch.png)
+
+#### Tiempo total
+
+El tiempo total del despliegue fue de aproximadamente:
+
+- **44 segundos**
+
+![Tiempo del despliegue](images/roll-wit-add-batch/rolling-add-batch.png)
+
+![Monitoreo del entorno](images/roll-wit-add-batch/monitore.png)
+
+#### Instancias iniciales o nuevas
+
+- Se crearon instancias adicionales temporales durante el despliegue
+- Posteriormente se actualizaron las instancias existentes
+- Finalmente se eliminaron las instancias adicionales
+
+#### Hallazgos
+
+- El despliegue se realizó sin downtime
+- La aplicación se mantuvo disponible durante todo el proceso
+- El uso de instancias adicionales mejora la disponibilidad
+- El tiempo de despliegue es mayor que en All-at-once, pero más seguro
+- Las pruebas en Postman confirmaron el correcto funcionamiento
+
+![Resultados finales de pruebas](images/roll-wit-add-batch/test-postma-roll-batch.png)
+
+> Esta estrategia permite mantener alta disponibilidad agregando capacidad temporal durante el despliegue.
+
 
 ### 5.4 Immutable o Traffic splitting
 #### Cantidad de instancias
