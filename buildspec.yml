@@ -1,0 +1,30 @@
+version: 0.2
+
+phases:
+  install:
+    runtime-versions:
+      python: 3.11
+    commands:
+      - echo "Installing Poetry..."
+      - python -m pip install --upgrade pip
+      - pip install poetry
+      - echo "Installing project dependencies with Poetry..."
+      - poetry config virtualenvs.create false
+      - poetry install --no-interaction --no-ansi
+
+  pre_build:
+    commands:
+      - echo "Running unit tests..."
+      - poetry run pytest -v tests/
+
+  build:
+    commands:
+      - echo "Packaging application artifact..."
+      - zip -r blacklist-service.zip . -x "tests/*" "terraform/*" "docs/*" ".git/*" ".github/*" "__pycache__/*" "*/__pycache__/*" "*.pyc" ".venv/*" "venv/*" ".pytest_cache/*" "*.db" "*.sqlite3"
+      - echo "Artifact generated successfully."
+
+artifacts:
+  files:
+    - blacklist-service.zip
+  discard-paths: yes
+  name: blacklist-service-$(date +%Y%m%d-%H%M%S)

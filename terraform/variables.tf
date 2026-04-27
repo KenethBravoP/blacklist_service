@@ -57,3 +57,15 @@ variable "beanstalk_instance_type" {
   type        = string
   default     = "t3.micro"
 }
+
+variable "github_full_repo_id" {
+  description = "GitHub repository identifier in the form owner/repo used by the CodePipeline source stage"
+  type        = string
+  default     = "jc-pena-p/blacklist_service_entrega_2"
+}
+
+variable "ci_branch" {
+  description = "Branch that the CodePipeline listens to. Temporarily point this at a test branch to validate the pipeline before switching to master."
+  type        = string
+  default     = "master"
+}
